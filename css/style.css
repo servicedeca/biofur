@@ -1,0 +1,11 @@
+.logo-footer{
+	height: 250px;
+    display: table;
+    width: 100%;
+}
+
+.logo-footer h1 {
+	display: table-cell;
+    text-align: center;
+    vertical-align: middle;
+}

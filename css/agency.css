@@ -652,8 +652,7 @@ aside.clients img {
 }
 
 section#contact {
-    background-color: #222;
-    background-image: url(../img/map-image.png);
+    background-color: #ffffff;
     background-position: center;
     background-repeat: no-repeat;
 }
@@ -719,6 +718,27 @@ section#contact .text-danger {
 footer {
     padding: 25px 0;
     text-align: center;
+    background-color: #000000;
+}
+
+.logo-footer{
+    height: 250px;
+    display: table;
+    width: 100%;
+}
+
+.logo-footer h1 {
+    display: table-cell;
+    text-align: center;
+    vertical-align: middle;
+    color: #ffffff;
+}
+
+.icon {
+    display: table-cell;
+    text-align: center;
+    vertical-align: middle;
+    margin-top: -45px;
 }
 
 footer span.copyright {
