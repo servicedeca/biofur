@@ -28,4 +28,4 @@ jQuery.fn.valignMiddle = function(elem) {
     jQuery(this).css("padding-bottom", pad);
 }
 
-$(".contact-box").valignMiddle();
+$(".logo-footer img").valignMiddle();

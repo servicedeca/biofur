@@ -653,92 +653,61 @@ aside.clients img {
 }
 
 section#contact {
+    display:table;
+    height: 500px;
     background-color: #ffffff;
     background-position: center;
     background-repeat: no-repeat;
+        text-align: centr;
+    margin: 0 auto;
 }
-
-section#contact .section-heading {
-    color: #fff;
-}
-
-section#contact .form-group {
-    margin-bottom: 25px;
-}
-
-section#contact .form-group input,
-section#contact .form-group textarea {
-    padding: 20px;
-}
-
-section#contact .form-group input.form-control {
-    height: auto;
-}
-
-section#contact .form-group textarea.form-control {
-    height: 236px;
-}
-
-section#contact .form-control:focus {
-    border-color: #fed136;
-    box-shadow: none;
-}
-
-section#contact::-webkit-input-placeholder {
-    text-transform: uppercase;
-    font-family: Montserrat,"Helvetica Neue",Helvetica,Arial,sans-serif;
-    font-weight: 700;
-    color: #bbb;
-}
-
-section#contact:-moz-placeholder {
-    text-transform: uppercase;
-    font-family: Montserrat,"Helvetica Neue",Helvetica,Arial,sans-serif;
-    font-weight: 700;
-    color: #bbb;
-}
-
-section#contact::-moz-placeholder {
-    text-transform: uppercase;
-    font-family: Montserrat,"Helvetica Neue",Helvetica,Arial,sans-serif;
-    font-weight: 700;
-    color: #bbb;
-}
-
-section#contact:-ms-input-placeholder {
-    text-transform: uppercase;
-    font-family: Montserrat,"Helvetica Neue",Helvetica,Arial,sans-serif;
-    font-weight: 700;
-    color: #bbb;
-}
-
-section#contact .text-danger {
-    color: #e74c3c;
+section#contact .container {
+    display: table-cell;
+    vertical-align: middle;
 }
 
 footer {
     padding: 25px 0;
     text-align: center;
-    background-color: #000000;
+    background-color: #4d4d4d;
 }
 
 .logo-footer{
-    height: 250px;
-    display: table;
-    width: 100%;
+
 }
 
-.logo-footer h1 {
-    display: table-cell;
+.logo-footer img {
+
+}
+
+
+
+
+.icons-box {
+    border: 1px solid white;
+    padding: 20px 10px 10px 10px;
+}
+
+.icons-box.vertical p {
+    margin-top: -15px;
     text-align: center;
-    vertical-align: middle;
-    color: #ffffff;
+    font-size:18px;
+    color: #676767; 
 }
 
+.icons-box p {
+    margin: 0 auto;
+    padding-top: 10px;
+    margin-bottom: 10px;
+}
 
+.container {
+    display:table;
+}
 
-.text-box {
-
+.contact-blok {
+    display: table-cell;
+    vertical-align: middle;
 }
 
 footer span.copyright {
