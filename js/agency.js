@@ -19,3 +19,13 @@ $(function() {
 $('body').scrollspy({
     target: '.navbar-fixed-top'
 })
+
+jQuery.fn.valignMiddle = function(elem) {
+    var h = jQuery(this).height();
+    var h2 = jQuery(this).parent().height();
+    var pad = (h2-h)/2;
+    jQuery(this).css("padding-top", pad);
+    jQuery(this).css("padding-bottom", pad);
+}
+
+$(".contact-box").valignMiddle();
