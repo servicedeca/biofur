@@ -675,10 +675,18 @@ section#contact .container {
     vertical-align: middle;
 }
 
+section#contact .container p{
+    display: table-cell;
+    vertical-align: middle;
+    font-size: 18px;
+}
+
 footer {
     padding: 25px 0;
     text-align: center;
     background-color: #4d4d4d;
+    z-index: 1000;
+    position: relative;
 }
 
 .logo-footer{
@@ -708,10 +716,6 @@ footer {
     margin: 0 auto;
     padding-top: 10px;
     margin-bottom: 10px;
-}
-
-.container {
-    display:table;
 }
 
 .contact-blok {
