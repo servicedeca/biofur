@@ -272,6 +272,7 @@ header {
     -moz-background-size: cover;
     background-size: cover;
     -o-background-size: cover;
+	height: 900px;
 }
 
 header .intro-text {
@@ -879,4 +880,10 @@ img::-moz-selection {
 
 body {
     webkit-tap-highlight-color: #fed136;
+}
+
+
+.slide{
+	  background-attachment: fixed;
+	  position: relative;
 }
