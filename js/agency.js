@@ -29,3 +29,16 @@ jQuery.fn.valignMiddle = function(elem) {
 }
 
 $(".logo-footer img").valignMiddle();
+
+
+
+
+
+ymaps.ready(init);
+var myMap;
+function init(){
+  myMap = new ymaps.Map("map", {
+    center: [55.650625, 87.62708],
+    zoom: 6
+});
+}

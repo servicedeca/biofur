@@ -11,7 +11,7 @@
 
 
 body * {
-    overflow-x: hidden;
+
      font-family: 'Segoe UI';
 }
 
@@ -681,6 +681,26 @@ section#contact .container p{
     font-size: 18px;
 }
 
+#map {
+    width: 100%;
+    height: 600px;
+}
+
+.title-map {
+    height: 100px;
+    width: 100%;
+    background-color: #4d4d4d;
+    text-align: center;
+    display: table;
+}
+
+.title-map h1 {
+    display: table-cell;
+    vertical-align: middle;
+    color: #b8b8b8; 
+    font-family: 'Segoe UI';
+}
+
 footer {
     padding: 25px 0;
     text-align: center;
@@ -689,16 +709,9 @@ footer {
     position: relative;
 }
 
-.logo-footer{
+.map-block .row {
 
 }
-
-.logo-footer img {
-
-}
-
-
-
 
 .icons-box {
     border: 1px solid white;
