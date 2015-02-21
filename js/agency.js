@@ -29,16 +29,45 @@ jQuery.fn.valignMiddle = function(elem) {
 }
 
 $(".logo-footer img").valignMiddle();
+$(".custom-button p").valignMiddle();
 
 
 
+ymaps.ready(function () {
+    var myMap = new ymaps.Map('map', {
+            center: [55.0122,82.9534],
+            zoom: 12
+        }),
 
+        myPlacemark = new ymaps.Placemark([55.0369,82.9204], {
+            hintContent: 'Собственный значок метки'
+        }, {
+            iconLayout: 'default#image',
+            iconImageHref: 'img/tag.svg',
+            iconImageSize: [30, 42],
+            iconImageOffset: [-3, -42]
+        }),
 
-ymaps.ready(init);
-var myMap;
-function init(){
-  myMap = new ymaps.Map("map", {
-    center: [55.650625, 87.62708],
-    zoom: 6
+        myPlacemark2 = new ymaps.Placemark([54.9862,82.9008], {
+            hintContent: 'Собственный значок метки'
+        }, {
+            iconLayout: 'default#image',
+            iconImageHref: 'img/tag.svg',
+            iconImageSize: [30, 42],
+            iconImageOffset: [-3, -42]
+        }),
+
+        myPlacemark3 = new ymaps.Placemark([55.0122,82.9534], {
+            hintContent: 'Собственный значок метки'
+        }, {
+            iconLayout: 'default#image',
+            iconImageHref: 'img/tag.svg',
+            iconImageSize: [30, 42],
+            iconImageOffset: [-3, -42]
+        });
+	myMap.behaviors.disable('scrollZoom');
+    myMap.geoObjects.add(myPlacemark);
+    myMap.geoObjects.add(myPlacemark2);
+    myMap.geoObjects.add(myPlacemark3);
 });
-}
+
