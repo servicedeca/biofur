@@ -1132,21 +1132,41 @@ body {
 	margin: 0px;
 }
 
+@media(max-width:991px){
+	.product-inner h2 {
+		font-size: 45px;
+	}
+}
+
 .product-line {
 	border-top:1px solid #808080;
 	margin-bottom: 40px;
 	margin-top: 40px;
 }
 
+@media(max-width:991px){
+	.product-line-fix {
+		margin-bottom: 30px;
+		margin-top: 30px;
+	}
+}
+
 .product-text {
 	margin-bottom: 25px;
+	padding-left: 0px;
 }
 
 .product-text p {
 	color:#676767;
 	font-size: 20px;
-	line-height: 24px
-	
+	line-height: 24px;
+	padding-left: 0px;
+}
+
+@media(max-width:991px){
+	.product-text p {
+		font-size: 19px;
+	}
 }
 
 .product-button {
@@ -1333,13 +1353,41 @@ background: url(../img/paralax1.jpg) 50% 0px fixed;
 }
 
 .product-photo-left {
-	text-align: left;
+	text-align: center;
 }
 
 .product-photo-right {
-	text-align: right;
+	text-align: ;
 }
 
 .margin-bottom-20 {
 	margin-bottom: 20px;
+}
+
+
+@media(max-width:1200px){
+	.product-inline {
+		display: none;
+	}
+}
+
+
+.product-none {
+		display: none;
+}
+
+@media(max-width:1200px){
+	.product-none {
+		display: inline;
+	}
+}
+
+@media(max-width:998px){
+	.product-none {
+		margin-left: -50px;
+	}
+}
+
+.padding-right-0 {
+	padding-right: 0px;
 }
