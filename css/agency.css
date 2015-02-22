@@ -1071,9 +1071,7 @@ body {
 	padding: 0px;
 }
 
-.product-photo {
-	text-align: right;
-}
+
 
 .product-inner {
 	height: 400px;
@@ -1260,6 +1258,18 @@ background-color: #59843b;
 	margin-bottom: 200px;
 }
 
+@media(max-width:1200px){
+	.fluid-line {
+		margin-bottom: 150px;
+	}
+}
+
+@media(max-width:768px){
+	.fluid-line {
+		margin-bottom: 50px;
+	}
+}
+
 .fluid-line-border {
 	border-bottom: 1px solid #333333;
 }
@@ -1282,4 +1292,22 @@ background: url(../img/paralax1.jpg) 50% 0px fixed;
   width: 100%;
   position: relative;
   padding: 300px 0;
+}
+
+.product-line-big-text {
+	margin-bottom: 20px;
+	margin-top: 20px;
+	border-top:1px solid #808080;
+}
+
+.product-photo-left {
+	text-align: left;
+}
+
+.product-photo-right {
+	text-align: right;
+}
+
+.margin-bottom-20 {
+	margin-bottom: 20px;
 }
