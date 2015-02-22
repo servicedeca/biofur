@@ -704,6 +704,7 @@ section#map-block{
     color: #808080;
     font-size: 20px;
     margin-left: -78px;
+    height: 50px;
 }   
 
 .line-block {
@@ -816,7 +817,38 @@ footer {
     line-height: 25px; 
 }
 
+#text-block .advantages-text div {
+    display: table-cell;
+    vertical-align: middle;
+}
+
+@media (max-width: 991px) {
+    #text-block .advantages-text {
+    padding-left: 0px;
+    padding-right: 0px;
+    display: inline-grid;
+    margin-top: 0px;
+    margin-bottom: 0px;
+    font-size: 20px;
+    margin-left: -323px;
+    height: 50px;
+    text-align: center;
+    margin: 0 auto;
+    }
+
+    #text-block .advantages-text div {
+        display: inline;
+    }
+
+    #text-block .what_is-icon {
+        line-height: 70px;
+        padding-right: 0px;
+}
+}
+
 .line{
+    margin-top:20px;
+    margin-bottom:20px; 
     border-top: 1px solid #808080;
 }
 

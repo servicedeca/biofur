@@ -30,7 +30,8 @@ jQuery.fn.valignMiddle = function(elem) {
 
 $(".logo-footer img").valignMiddle();
 $(".custom-button p").valignMiddle();
-//$("#text-block .what_is-icon img").valignMiddle();
+$("#text-block .what_is-icon img").valignMiddle();
+//$("#text-block .advantages-text div").valignMiddle();
 
 
 
