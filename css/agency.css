@@ -693,11 +693,22 @@ section#contact .container p{
 }
 
 section#video{
-    padding-bottom:50px;     
+    padding-bottom:50px;
+    padding-top:0px;
+    height: 600px;       
+}
+
+.embed-responsive .embed-responsive-item, .embed-responsive iframe, .embed-responsive embed, .embed-responsive object {
+
+
 }
 
 section#map-block{
     padding-top:50px;     
+}
+
+section#text-block {
+    padding-bottom: 0px;
 }
 
 #text-block .advantages-text {
@@ -713,6 +724,12 @@ section#map-block{
     padding-left: 15px;
     margin-right: auto;
     margin-left: auto;
+}
+
+.text-block-lab {
+    margin-top: -37%;
+    margin-left: 64%;
+    width: 350px;
 }
 
 section#video .col-lg-12 {
@@ -843,7 +860,13 @@ footer {
     #text-block .what_is-icon {
         line-height: 70px;
         padding-right: 0px;
-}
+    }
+
+    .text-block-lab {
+    margin-top: -83%;
+    margin-left: 26%;
+    width: 400px;
+    }
 }
 
 .line{

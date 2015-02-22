@@ -280,7 +280,7 @@
             </div>
 
             </div>
-
+           <img class="text-block-lab" src="img/lab.svg">
         </div>    
     </section>
 
@@ -289,8 +289,11 @@
 
     <section id="video">        
 
-            <div class="col-lg-12">
-                <iframe width="100%" height="800px" src="https://www.youtube.com/embed/p2pIeHV_0VM" frameborder="0" allowfullscreen></iframe>
+            <div class="col-lg-12" style="">
+                <!-- 16:9 aspect ratio -->
+                <div class="embed-responsive embed-responsive-16by9">
+                  <iframe class="embed-responsive-item" src="https://www.youtube.com/embed/p2pIeHV_0VM"></iframe>
+                </div>
             </div>
     </section>
 
@@ -583,7 +586,7 @@
 		$('section[data-type="background"]').each(function(){
 			var $bgobj = $(this); // создаем объект
 			$(window).scroll(function() {
-				var yPos = -($window.scrollTop() / $bgobj.data('speed')); // вычисляем коэффициент 
+				var yPos = -($(window).scrollTop() / $bgobj.data('speed')); // вычисляем коэффициент 
 
 				// Присваиваем значение background-position
 				var coords = 'center '+ yPos + 'px';

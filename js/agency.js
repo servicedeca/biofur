@@ -68,6 +68,10 @@ ymaps.ready(function () {
             iconImageOffset: [-3, -42]
         });
 	myMap.behaviors.disable('scrollZoom');
+    myMap.controls.remove("mapTools")
+    .remove("typeSelector")
+    .remove("trafficControl")
+    .remove("searchControl");
     myMap.geoObjects.add(myPlacemark);
     myMap.geoObjects.add(myPlacemark2);
     myMap.geoObjects.add(myPlacemark3);
