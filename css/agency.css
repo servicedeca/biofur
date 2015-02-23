@@ -297,7 +297,7 @@ header {
 	height: 1100px;
 }
 
-@media(max-width:767px){
+@media(max-width:1025px){
 	header{
 		height: 600px;	  
 	}
@@ -1009,7 +1009,7 @@ body {
 	  position: relative;
 }
 
-@media(max-width:767px){
+@media(max-width:1025px){
 	.slide{
 		  background-attachment:inherit;
 		  position: relative;
@@ -1033,11 +1033,11 @@ body {
 	margin-left: -200px
 }
 
-@media(max-width:767px){
+@media(max-width:1025px){
 	.main-logo{
 		position: absolute;
-		width: 80%;
-		left: 10%;
+		width: 60%;
+		left: 20%;
 		margin-top: 0px;
 		margin-left: 0px;
 		top:20%;
@@ -1227,6 +1227,16 @@ body {
 }
 
 .product-button-h:hover {
+	opacity: 1;
+	color: #f2f2f2;
+	text-decoration: none;
+	transition: all 200ms linear;
+	-moz-transition: all 200ms linear;
+	-webkit-transition: all 200ms linear;
+	-o-transition: all 200ms linear;
+}
+
+.product-button-h:focus {
 	opacity: 1;
 	color: #f2f2f2;
 	text-decoration: none;
