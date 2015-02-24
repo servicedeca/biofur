@@ -11,10 +11,6 @@
 
 
 body * {
-<<<<<<< HEAD
-=======
-
->>>>>>> f11c4b0234a31f9de2f8905e40235fe5ee0b2967
      font-family: 'Segoe UI';
 }
 
@@ -180,7 +176,7 @@ fieldset[disabled] .btn-xl.active {
 
 .navbar-default {
     border-color: transparent;
-    background-color: #f2f2f2;
+    background-color: #fff;
 }
 
 .navbar-default .navbar-brand {
@@ -200,8 +196,8 @@ fieldset[disabled] .btn-xl.active {
 }
 
 .navbar-default .navbar-toggle {
-    border-color: #fed136;
-    background-color: #fed136;
+    border-color: #59843b;
+    background-color: #59843b;
 }
 
 .navbar-default .navbar-toggle .icon-bar {
@@ -210,7 +206,7 @@ fieldset[disabled] .btn-xl.active {
 
 .navbar-default .navbar-toggle:hover,
 .navbar-default .navbar-toggle:focus {
-    background-color: #fed136;
+    background-color: #59843b;
 }
 
 .navbar-default .nav li a {
@@ -725,6 +721,7 @@ section#map-block{
 section#text-block {
     padding-bottom: 50px;
 	padding-top: 120px;
+	position: relative;
 }
 
 #text-block .advantages-text {
@@ -911,7 +908,7 @@ ul.social-buttons li a:active {
 }
 
 .portfolio-modal .modal-content {
-    padding: 100px 0;
+    padding-top: 100px;
     min-height: 100%;
     border: 0;
     border-radius: 0;
@@ -919,6 +916,8 @@ ul.social-buttons li a:active {
     background-clip: border-box;
     -webkit-box-shadow: none;
     box-shadow: none;
+	background: url(../img/bio.jpg);
+	background-repeat: no-repeat;
 }
 
 .portfolio-modal .modal-content h2 {
@@ -927,7 +926,7 @@ ul.social-buttons li a:active {
 }
 
 .portfolio-modal .modal-content p {
-    margin-bottom: 30px;
+    margin-bottom: 10px;
 }
 
 .portfolio-modal .modal-content p.item-intro {
@@ -942,9 +941,6 @@ ul.social-buttons li a:active {
     margin-bottom: 30px;
 }
 
-.portfolio-modal .modal-content img {
-    margin-bottom: 30px;
-}
 
 .portfolio-modal .close-modal {
     position: absolute;
@@ -1129,6 +1125,12 @@ body {
 @media(max-width:991px){
 	.product-inner h2 {
 		font-size: 45px;
+	}
+}
+
+@media(max-width:991px){
+	 .h2fix h2{
+		font-size: 30px;
 	}
 }
 
@@ -1346,7 +1348,6 @@ background: url(../img/paralax1.jpg) 50% 0 fixed;
 	padding-bottom: 50px; 	
 	border-top: 1px solid #59843b;
 	border-bottom: 1px solid #59843b;
-	background: #f7f7f7;
 	}
 
 .fluid-line {
@@ -1488,6 +1489,7 @@ background: url(../img/paralax2.jpg) 50% 0px fixed;
 .about-item{
 	margin-bottom: 30px;
 	padding-left: 25px;
+	height: 230px;
 	padding-right: 25px;
 }
 
@@ -1530,15 +1532,22 @@ background: url(../img/paralax2.jpg) 50% 0px fixed;
 
 .labs-bckg img {
 	position: absolute;
-	width: 25%;
+	height: 550px;;
 	bottom: -50px;
-	right: 20%;
+	right: 25%;
 	z-index: 0;
 }
 
+@media(max-width:2000px){
+	.labs-bckg img {
+	right: 15%;
+	right: 20%;
+	}
+}
+
+
 @media(max-width:1200px){
 	.labs-bckg img {
-		width: 35%;
 	right: 15%;
 	}
 }
@@ -1631,4 +1640,84 @@ background: url(../img/paralax2.jpg) 50% 0px fixed;
 .contact-text a:hover{
 	color:#676767;
 	text-decoration: none;
+}
+
+.modal-open .modal {
+	overflow-x: hidden;
+	overflow-y: auto;
+	width: 80%;
+	left: 10%;
+}
+
+@media(max-width:1450px){
+.modal-open .modal{
+		width:100%;
+		left: 0%;
+	}
+}
+
+
+@media(max-width:991px){
+.modal-image{
+	display:none;
+	}
+}
+
+.modal-image{
+	height: 700px;
+	line-height: 700px;
+	margin-top: 50px;
+}
+
+.modal-image img{
+	width: 50%
+}
+
+.modal-text h1{
+	text-transform:uppercase;
+	color:#59843b;
+	font-size: 50px;
+	font-weight: 600px;
+	margin: 0px;
+	margin-top: 25px;
+}
+
+.modal-text h2{
+	text-transform:uppercase;
+	color:#7a9f48;
+	font-size: 50px;
+	font-weight: 600px;
+	margin: 0px;
+}
+
+.modal-text h3{
+	color:#808080;
+	font-size: 30px;
+	text-transform: uppercase;
+	font-weight: 300;
+	margin-bottom: 30px;
+	padding-left: 15px;
+}
+
+.modal-text p{
+	color:#808080;
+	font-size: 14px;
+	line-height: 16px;
+	padding-left: 15px;
+}
+
+.modal-text {
+	margin-bottom: 150px;
+}
+
+.margin-bottom-120 {
+	margin-bottom: 120px;
+}
+
+.fluid-line-fix {
+	margin-bottom: 0px;
+}
+
+.fix-about-item {
+	height: 150px;
 }
