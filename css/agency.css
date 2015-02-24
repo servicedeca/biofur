@@ -716,6 +716,7 @@ section#video{
 
 section#map-block{
     padding-top:0px;     
+	border-top: 1px solid #59843b;
 }
 
 section#text-block {
@@ -1716,7 +1717,7 @@ background: url(../img/paralax2.jpg) 50% 0px fixed;
 }
 
 .fluid-line-fix {
-	margin-bottom: 0px;
+	margin-bottom: 50px;
 }
 
 .fix-about-item {
