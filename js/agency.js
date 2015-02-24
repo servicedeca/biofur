@@ -72,6 +72,8 @@ ymaps.ready(function () {
     .remove("typeSelector")
     .remove("trafficControl")
     .remove("searchControl");
+    myMap.behaviors.disable('drag');
+    myMap.behaviors.disable('multiTouch');
     myMap.geoObjects.add(myPlacemark);
     myMap.geoObjects.add(myPlacemark2);
     myMap.geoObjects.add(myPlacemark3);
