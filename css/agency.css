@@ -1647,6 +1647,7 @@ background: url(../img/paralax2.jpg) 50% 0px fixed;
 	overflow-y: auto;
 	width: 80%;
 	left: 10%;
+	background: #fff;
 }
 
 @media(max-width:1450px){
