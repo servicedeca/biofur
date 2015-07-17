@@ -1,0 +1,16 @@
+.form-item, .form-actions {
+  margin: 0;
+}
+
+img.currency-img {
+  width: 50px;
+}
+
+#views-exposed-form-content-city-service {
+  display: none;
+}
+
+.button-go,
+.button-go:hover {
+  padding: 8px;
+}

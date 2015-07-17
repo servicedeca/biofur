@@ -1,0 +1,389 @@
+<?php
+
+/**
+ * @file
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function excur_offer_schema() {
+  $schema['excur_offer'] = array(
+    'description' => 'List of offers',
+    'fields' => array(
+      'id' => array(
+        'description' => 'The primary identifier for a offer.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'oid' => array(
+        'description' => 'The identifier for a offer.',
+        'type' => 'varchar',
+        'length' => 14,
+        'not null' => TRUE,
+      ),
+      'uid' => array(
+        'description' => 'The primary identifier for a user.',
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'nid' => array(
+        'description' => 'The primary identifier for a service.',
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'date' => array(
+        'description' => 'Offer date.',
+        'type' => 'varchar',
+        'length' => 50,
+        'not null' => TRUE,
+      ),
+      'ticket' => array(
+        'description' => 'Offer price.',
+        'type' => 'text',
+        'not null' => TRUE,
+      ),
+      'currency' => array(
+        'description' => 'Offer price currency.',
+        'type' => 'varchar',
+        'length' => 3,
+        'not null' => TRUE,
+      ),
+      'created' => array(
+        'description' => 'Created time of offer.',
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'status' => array(
+        'description' => 'status.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'language' => array(
+        'description' => 'language of offer.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'offer' => array(
+        'description' => 'offer.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'duration' => array(
+        'description' => 'duration.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'name' => array(
+        'description' => 'name.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'email' => array(
+        'description' => 'email.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'phone' => array(
+        'description' => 'phone.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'tourist_name' => array(
+        'description' => 'tourist phone.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'tourist_email' => array(
+        'description' => 'tourist email.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'tourist_phone' => array(
+        'description' => 'tourist phone.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'venue' => array(
+        'description' => 'venue.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'start_time' => array(
+        'description' => 'start time.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'companion' => array(
+        'description' => 'companion.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('id', 'oid'),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implements hook_enable().
+ */
+function excur_offer_enable() {
+  $current = variable_get('mail_system', array('default-system' => 'DefaultMailSystem'));
+  $addition = array('excur_offer' => 'ExcurOfferMailSystem');
+  variable_set('mail_system', array_merge($current, $addition));
+}
+
+/**
+ * Implements hook_disable().
+ */
+function excur_offer_disable() {
+  $mail_system = variable_get('mail_system', array('default-system' => 'DefaultMailSystem'));
+  unset($mail_system['excur_offer']);
+  variable_set('mail_system', $mail_system);
+}
+
+/**
+ * Implements hook_update_N().
+ * Enable ExcurOfferMailSystem mail system.
+ */
+function excur_offer_update_7001() {
+  $current = variable_get('mail_system', array('default-system' => 'DefaultMailSystem'));
+  $addition = array('excur_offer' => 'ExcurOfferMailSystem');
+  variable_set('mail_system', array_merge($current, $addition));
+}
+
+/**
+ * Implements hook_update_N().
+ * Add new status field.
+ */
+function excur_offer_update_7002() {
+  $field = array(
+    'description' => 'status.',
+    'type' => 'varchar',
+    'length' => 255,
+    'not null' => TRUE,
+  );
+
+  db_add_field('excur_offer', 'status', $field);
+  db_update('excur_offer')
+    ->fields(array('status' => EXCUR_OFFER_CONFIRMED))
+    ->execute();
+}
+
+/**
+ * Implements hook_update_N().
+ * Add new id field.
+ */
+function excur_offer_update_7003() {
+  $field = array(
+    'description' => 'The primary identifier for a offer.',
+    'type' => 'serial',
+    'unsigned' => TRUE,
+    'not null' => TRUE,
+  );
+
+  db_drop_primary_key('excur_offer');
+  db_add_field('excur_offer', 'id', $field);
+  db_add_primary_key('excur_offer', array('id', 'oid'));
+}
+
+
+/**
+ * Implements hook_update_N().
+ * Add new fields to excur_offer table.
+ */
+function excur_offer_update_7004() {
+  if (!db_field_exists('excur_offer', 'language')) {
+    $field = array(
+      'description' => 'Language of offer.',
+      'type' => 'varchar',
+      'length' => 255,
+      'not null' => TRUE,
+    );
+    db_add_field('excur_offer', 'language', $field);
+  }
+
+  if (!db_field_exists('excur_offer', 'offer')) {
+    $field = array(
+      'description' => 'Offer.',
+      'type' => 'varchar',
+      'length' => 255,
+      'not null' => TRUE,
+    );
+    db_add_field('excur_offer', 'offer', $field);
+  }
+
+  if (!db_field_exists('excur_offer', 'ticket_type')) {
+    $field = array(
+      'description' => 'Ticket.',
+      'type' => 'varchar',
+      'length' => 255,
+      'not null' => TRUE,
+    );
+    db_add_field('excur_offer', 'ticket_type', $field);
+  }
+
+  if (!db_field_exists('excur_offer', 'duration')) {
+    $field = array(
+      'description' => 'Duration.',
+      'type' => 'varchar',
+      'length' => 255,
+      'not null' => TRUE,
+    );
+    db_add_field('excur_offer', 'duration', $field);
+  }
+
+  if (!db_field_exists('excur_offer', 'name')) {
+    $field = array(
+      'description' => 'Name.',
+      'type' => 'varchar',
+      'length' => 255,
+      'not null' => TRUE,
+    );
+    db_add_field('excur_offer', 'name', $field);
+  }
+
+  if (!db_field_exists('excur_offer', 'email')) {
+    $field = array(
+      'description' => 'Email.',
+      'type' => 'varchar',
+      'length' => 255,
+      'not null' => TRUE,
+    );
+    db_add_field('excur_offer', 'email', $field);
+  }
+
+  if (!db_field_exists('excur_offer', 'phone')) {
+    $field = array(
+      'description' => 'Phone.',
+      'type' => 'varchar',
+      'length' => 255,
+      'not null' => TRUE,
+    );
+    db_add_field('excur_offer', 'phone', $field);
+  }
+
+  if (!db_field_exists('excur_offer', 'tourist_name')) {
+    $field = array(
+      'description' => 'tourist name.',
+      'type' => 'varchar',
+      'length' => 255,
+      'not null' => TRUE,
+    );
+    db_add_field('excur_offer', 'tourist_name', $field);
+  }
+
+  if (!db_field_exists('excur_offer', 'tourist_email')) {
+    $field = array(
+      'description' => 'Tourist email.',
+      'type' => 'varchar',
+      'length' => 255,
+      'not null' => TRUE,
+    );
+    db_add_field('excur_offer', 'tourist_email', $field);
+  }
+
+  if (!db_field_exists('excur_offer', 'tourist_phone')) {
+    $field = array(
+      'description' => 'Tourist phone.',
+      'type' => 'varchar',
+      'length' => 255,
+      'not null' => TRUE,
+    );
+    db_add_field('excur_offer', 'tourist_phone', $field);
+  }
+
+  if (!db_field_exists('excur_offer', 'venue')) {
+    $field = array(
+      'description' => 'Venue.',
+      'type' => 'varchar',
+      'length' => 255,
+      'not null' => TRUE,
+    );
+    db_add_field('excur_offer', 'venue', $field);
+  }
+}
+
+/**
+ * Implements hook_update_N().
+ * Add new start_time field.
+ */
+function excur_offer_update_7005() {
+  $field = array(
+    'description' => 'Start time.',
+    'type' => 'varchar',
+    'length' => 255,
+    'not null' => TRUE,
+  );
+
+  db_add_field('excur_offer', 'start_time', $field);
+}
+
+/**
+ * Implements hook_update_N().
+ * Add new companion field.
+ */
+function excur_offer_update_7006() {
+  $field = array(
+    'description' => 'Companion.',
+    'type' => 'varchar',
+    'length' => 255,
+    'not null' => TRUE,
+  );
+
+  db_add_field('excur_offer', 'companion', $field);
+}
+
+/**
+ * Implements hook_update_N().
+ *
+ * Change dates.
+ */
+function excur_offer_update_7007() {
+  $results = db_select('excur_offer', 'eo')
+    ->fields('eo', array('id', 'date'))
+    ->execute()
+    ->fetchAll();
+
+  foreach ($results as $result) {
+    db_update('excur_offer')
+      ->fields(array('date' => strtotime($result->date)))
+      ->condition('id', $result->id)
+      ->execute();
+  }
+}
+
+/**
+ * Implements hook_update_N().
+ *
+ * Update db fields.
+ */
+function excur_offer_update_7008() {
+  db_delete('excur_offer')
+    ->execute();
+
+  db_drop_field('excur_offer', 'ticket_type');
+  db_drop_field('excur_offer', 'ticket');
+
+  db_add_field('excur_offer', 'ticket', array(
+    'description' => 'Offer price.',
+    'type' => 'text',
+    'not null' => TRUE,
+  ));
+}

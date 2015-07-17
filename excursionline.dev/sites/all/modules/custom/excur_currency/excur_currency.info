@@ -1,0 +1,6 @@
+name = Excur currency
+package = Excur
+core = 7.x
+
+files[] = excur_currency.inc
+configure = admin/config/excur

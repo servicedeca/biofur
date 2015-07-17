@@ -1,0 +1,1062 @@
+<?php
+
+/**
+ * @file.
+ */
+
+define('EXCUR_OFFER_NOT_CONFIRMED', 'not_confirmed');
+define('EXCUR_OFFER_CONFIRMED', 'confirmed');
+define('EXCUR_OFFER_REJECTED', 'rejected');
+define('EXCUR_OFFER_PRICE_PER_USER', 0);
+define('EXCUR_OFFER_PRICE_PER_GROUP', 1);
+
+// Include additional files.
+require_once 'excur_offer.mail.inc';
+
+/**
+ * Implements hook_menu().
+ */
+function excur_offer_menu() {
+
+  $items['excur/offer/%excur_offer'] = array(
+    'title' => 'E-ticket',
+    'page callback' => 'excur_offer_page',
+    'page arguments' => array(2),
+    'access callback' => 'excur_offer_page_access',
+    'access arguments' => array(2),
+  );
+
+  $items['excur/offer/confirm/%excur_offer'] = array(
+    'title' => 'confirmed',
+    'page callback' => 'excur_offer_confirmed',
+    'page arguments' => array(3),
+    'access arguments' => array('access content'),
+  );
+
+  $items['excur/offer/reject/%excur_offer'] = array(
+    'title' => 'reject',
+    'page callback' => 'excur_offer_rejected',
+    'page arguments' => array(3),
+    'access arguments' => array('access content'),
+  );
+
+  $items['excur/offer/order/%node'] = array(
+    'title' => 'Order',
+    'page callback' => 'excur_offer_order',
+    'page arguments' => array(3),
+    'access arguments' => array('access content'),
+  );
+
+  $items['excur/offer/pay/%node'] = array(
+    'title' => 'Order pay',
+    'page callback' => 'excur_offer_pay',
+    'page arguments' => array(3),
+    'access arguments' => array('access content'),
+  );
+
+  $items['excur/special-offer/%node'] = array(
+    'title' => 'Order pay',
+    'page callback' => 'excur_offer_special_offer',
+    'page arguments' => array(2),
+    'access arguments' => array('access content'),
+  );
+
+  $items['excur/offer/pay_end'] = array(
+    'page callback' => 'excur_offer_pay_end',
+    'access arguments' => array('access content'),
+  );
+  return $items;
+}
+
+/**
+ * Implement hook_theme().
+ */
+function excur_offer_theme() {
+  $items['excur_offer_offer_form'] = array(
+    'template' => 'theme/offer-form',
+    'render element' => 'form',
+  );
+
+  $items['offer_pdf'] = array(
+    'file' => 'theme.inc',
+    'path' => drupal_get_path('module', 'excur_offer') . '/theme',
+    'variables' => array(
+      'offer' => NULL,
+    ),
+    'template' => 'offer-pdf',
+  );
+
+  $items['order_template'] = array(
+    'template' => 'order-template',
+  );
+
+  $items['order_form'] = array(
+    'render element' => 'form',
+    'template' => 'order-form',
+  );
+
+  $items['pay_template'] = array(
+    'template' => 'pay-template',
+    'variables' => array(
+      'pay' => NULL,
+      'off_id' => NULL,
+    ),
+  );
+
+  $items['time'] = array(
+    'arguments' => array('element' => null)
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_views_api().
+ */
+function excur_offer_views_api() {
+  return array(
+    'api' => 3,
+  );
+}
+
+/**
+ * Page callback for /excur/offer/pay_end.
+ */
+function excur_offer_pay_end() {
+  global $language;
+  $offer_id = $_POST['offer_id'];
+
+  $offer = excur_offer_load($offer_id);
+  $nid = $offer->nid;
+
+  $node = node_load($nid);
+  $reservation = entity_metadata_wrapper('node', $node);
+  $reservation -> language($language->language);
+  $companion = !empty($values['companion']) && $values['companion']
+    ? TRUE
+    : FALSE;
+  if ($node->type == 'service') {
+    $reservation = $reservation->field_reservation->value();
+  }
+  else {
+    $reservation = 0;
+  }
+
+  if ($reservation == 1) {
+    excur_offer_update($offer->id, 'status', EXCUR_OFFER_NOT_CONFIRMED);
+
+    $answer = '<h1>Бронирование усппешно прошло! Ожидайте подтверждение гида!</h1>';
+  }
+  else {
+    excur_offer_update($offer->id, 'status', EXCUR_OFFER_CONFIRMED);
+
+    $answer = '<h1 style="color: red">Бронирование усппешно прошло! Для того чтобы получить билет зайдите в личный кабинет!</h1>';
+  }
+
+  print $answer;
+
+  drupal_exit();
+}
+
+
+/**
+ * Implements hook_forms()
+ */
+function excur_offer_forms($form_id, $args) {
+  $forms = array();
+
+  if (strpos($form_id, 'excur_offer_offer_form') === 0) {
+    $forms['excur_offer_offer_form_' . $args[0]['id']] = array(
+      'callback' => 'excur_offer_offer_form',
+    );
+  }
+
+  return $forms;
+}
+
+/**
+ * Access callback to offer pages.
+ */
+function excur_offer_page_access($offer) {
+  global $user;
+
+  if ($offer->uid == $user->uid
+    || $user->uid == 1
+    || (!empty($_GET['hash']) && $_GET['hash'] == md5(serialize($offer)))) {
+
+    return TRUE;
+  }
+
+  return FALSE;
+}
+
+/**
+ * Page callback for excur/offer/%excur_offer path.
+ */
+function excur_offer_confirmed($offer) {
+  excur_offer_update($offer->id, 'status', EXCUR_OFFER_CONFIRMED);
+  $account = user_load($offer->uid);
+  $message = theme('offer_mail', array(
+    'offer' => $offer,
+  ));
+  excur_offer_send_mail($account->mail, $message);
+  print "<div class='order-card-status-inner-confirm'>". t('Confirmed')."</div>";
+  drupal_exit();
+}
+
+/**
+ * Page callback for excur/offer/reject/%excur_offer
+ */
+function excur_offer_rejected($offer) {
+  excur_offer_update($offer->id, 'status', EXCUR_OFFER_REJECTED);
+  $account = user_load($offer->uid);
+  $message = t('Guide has rejected your order.');
+  excur_offer_send_mail($account->mail, $message);
+  print "<div class='order-card-status-inner-confirm'>".t('Rejected')."</div>";
+  drupal_exit();
+}
+
+/**
+ * Page callback for excur/offer/%excur_offer path.
+ */
+function excur_offer_page($offer) {
+  $html = theme('offer_pdf', array('offer' => $offer));
+  $error = FALSE;
+
+  if (($library = libraries_load('phpwkhtmltopdf')) && !empty($library['loaded'])) {
+    $pdf = new WkHtmlToPdf;
+    $file_path = file_directory_temp() . '/' . time() . '.html';
+    if (file_put_contents($file_path, $html)) {
+      $pdf->addPage($file_path);
+      if (!$pdf->send("order-$offer->id.pdf")) {
+        $error = TRUE;
+      }
+      unlink($file_path);
+    }
+    else {
+      $error = TRUE;
+    }
+  }
+  else {
+    $error = TRUE;
+  }
+
+  if ($error) {
+    print $html;
+  }
+
+  drupal_exit();
+}
+
+/**
+ * Page callback for excur/offer/%order.
+ */
+function excur_offer_order($order) {
+  if (!empty($_GET['id']) && is_numeric($_GET['id'])) {
+    return theme('order_template', array('order' => $order));
+  }
+  else {
+    drupal_not_found();
+    drupal_exit();
+  }
+}
+
+/**
+ * Form builder for offer form.
+ */
+function excur_offer_offer_form($form, &$form_state, $offer) {
+  $form_state['#data'] = $offer;
+  $form['#data'] = $offer;
+
+  $form['tickets'] = array(
+    '#type' => 'data',
+    '#tree' => TRUE,
+  );
+
+  if ($offer['type'] == EXCUR_OFFER_PRICE_PER_USER) {
+    foreach ($offer['tickets'] as $key => $ticket) {
+      $i = $key;
+      $key = (string) $key . '|';
+      $key .= transliteration_get(drupal_strtolower($ticket['title']));
+      $key = str_replace(' ', '', $key);
+      $type = $offer['type'] ? t('/за группу') : t('/за человека');
+      $type .= ')';
+
+      $form['tickets'][$key] = array(
+        '#type' => 'textfield',
+        '#default_value' => 0,
+        '#attributes' => array(
+          'maxlength' => 2,
+          'required' => TRUE,
+          'class' => array('edit-tickets'),
+        ),
+        '#id' => 'edit-tickets-' . $i,
+      );
+      $form['#data']['tickets'][$i]['title'] = $ticket['title'];
+      $form['#data']['tickets'][$i]['price'] = $ticket['price'];
+      $form['#data']['tickets'][$i]['currency'] = $offer['currency'];
+      $form['#data']['count_ticket'][$i] = $i;
+      $form['#data']['count_ticket-id'] .= $i . '_';
+    }
+    $form['#data']['count_ticket-id'] = substr($form['#data']['count_ticket-id'], 0, strlen($form['#data']['count_ticket-id']) - 1);
+    $a = 1;
+  }
+  else {
+    foreach ($offer['tickets'] as $key => $ticket) {
+      $i = $key;
+
+      $key = (string) $key . '|';
+      $key .= transliteration_get(drupal_strtolower($ticket['title']));
+      $key = str_replace(' ', '', $key);
+
+      $options[$key] = '';
+
+      $form['#data']['tickets'][$i]['title'] = $ticket['title'];
+      $form['#data']['tickets'][$i]['price'] = $ticket['price'];
+      $form['#data']['tickets'][$i]['currency'] = $offer['currency'];
+      $form['#data']['count_ticket'][$i] = $i;
+      $form['#data']['count_ticket-id'] .= $i . '_';
+
+    }
+    $form['tickets'] = array(
+      '#type' => 'radios',
+      '#options' => $options,
+    );
+  }
+
+  $form['date'] = array(
+    '#type' => 'date_popup',
+    '#default_value' => date('Y-m-d'),
+    '#date_format' => 'Y-m-d',
+    '#date_year_range' => '-0:+1',
+    '#date_label_position' => 'within',
+    '#attributes' => array(
+      'required' => TRUE,
+      'class' => array('form-control', 'excur-offer-date-form'),
+    )
+  );
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Reserve'),
+    '#attributes' => array(
+      'class' => array('submit-offer', 'excur-offer-button'),
+      'data-sub-id' => $form['#data']['count_ticket-id'],
+    ),
+    '#ajax' => array(
+      'callback' => 'excur_offer_offer_form_submit',
+    ),
+  );
+
+  //$form['#submit'][] = 'excur_offer_offer_form_submit';
+  $form['#validate'][] = 'excur_offer_offer_form_validate';
+
+  return $form;
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function excur_offer_form_privatemsg_new_alter(&$form, &$form_state) {
+  global $user;
+
+  if (isset($user->roles[EXCUR_USER_ROLE_GUIDE_ID])
+    && !empty($form['thread_id']['#value'])
+    && $thread = privatemsg_thread_load($form['thread_id']['#value'])) {
+
+    foreach ($thread['participants'] as $account) {
+      if ($account->uid != $user->uid) {
+        break;
+      }
+    }
+    $form['actions']['special_offer']['#markup'] = l(t('Special offer'), 'node/add/special-offer', array(
+      'query' => array(
+        'user' => $account->uid,
+        'thread' => $form['thread_id']['#value'],
+        'destination' => current_path(),
+      )
+    ));
+    $form['actions']['special_offer']['#weight'] = 50;
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function excur_offer_form_special_offer_node_form_alter(&$form, &$form_state) {
+  global $user;
+
+  $text = t('Meeting date');
+  $required = ' <span class="form-required" title="' . t('This field is required.') . '">*</span>';
+  $form['field_start_date']['#prefix'] = '<label for="edit-field-start-date-und-0-value-datepicker-popup-0">' . $text . $required . '</label>';
+
+  if (!empty($_GET['user']) && is_numeric($_GET['user'])) {
+    $form['field_user'][LANGUAGE_NONE]['#value'] = $_GET['user'];
+    $form['field_guide'][LANGUAGE_NONE]['#value'] = $user->uid;
+    $form['field_user']['#prefix'] = '<div class="element-hidden">';
+    $form['field_user']['#suffix'] = '</div>';
+    $form['field_guide']['#prefix'] = '<div class="element-hidden">';
+    $form['field_guide']['#suffix'] = '</div>';
+  }
+}
+
+/**
+ * Implements hook_node_presave().
+ */
+function excur_offer_node_insert($node) {
+  global $user;
+
+  if ($node->type == 'special_offer') {
+    $thread = privatemsg_thread_load($_GET['thread']);
+    $message = new StdClass();
+    $message->body = t('Special offer to you. You can pay for it at !this_page.', array(
+      '!this_page' => l(t('this page'), 'excur/special-offer/' . $node->nid),
+    ));
+    $message->subject = $thread['subject'];
+    $recipient = new StdClass();
+    $recipient->type = 'user';
+    $recipient->recipient = $_GET['user'];
+    $message->recipients = array($recipient);
+    $message->author = $user;
+    $message->timestamp = REQUEST_TIME;
+    $message->format = 'filtered_html';
+    $message->has_token = FALSE;
+    $message->thread_id = $thread['thread_id'];
+    _privatemsg_send($message);
+  }
+}
+
+/**
+ * Form builder for offer form.
+ */
+function excur_offer_pay_form() {
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Pay'),
+    '#attributes' => array(
+      'class' => array('btn'),
+    ),
+  );
+
+  return $form;
+}
+
+/**
+ * Form builder for order form.
+ */
+function excur_offer_order_form($form, $form_state, $offer) {
+  if (user_is_anonymous()) {
+    drupal_set_message('You must login or register to offer the order.');
+    drupal_goto();
+  }
+
+  global $user;
+  global $language;
+
+  $options_languages = array();
+  $node = node_load($offer->nid);
+  $wrapper = entity_metadata_wrapper('node', $node);
+  $wrapper->language($language->language);
+  $offer_type = $wrapper->field_offer->value();
+  foreach ($offer_type as $off) {
+    if (!empty($off->field_offer_title[$language->language])) {
+      $type_offer = $off->field_offer_title[$language->language][0]['safe_value'];
+    }
+    else {
+      $type_offer = reset($off->field_offer_title);
+      $type_offer = $type_offer[0]['safe_value'];
+    }
+  }
+  $start_place = $wrapper->field_start_place->value();
+  $start_time = $wrapper->field_start_time->value();
+
+  $private_place = !empty($offer->field_private_place)
+    ? $offer->field_private_place[LANGUAGE_NONE][0]['value']
+    : 0;
+  $private_time = !empty($offer->field_private_time)
+    ? $offer->field_private_time[LANGUAGE_NONE][0]['value']
+    : 0;
+  $language_list = $offer->field_languages[LANGUAGE_NONE];
+  $data_content = array();
+
+  foreach ($language_list as $key => $tid) {
+    $lang = taxonomy_term_load($tid['tid']);
+    $options_languages[$key] = $lang->name;
+  }
+
+  if ($private_time == 0) {
+    $form['time'] = array(
+      '#type'	=> 'textfield',
+      '#default_value' => $start_time,
+      '#attributes' => array(
+        'class' => array('form-control', 'modal-pay-form-mini'),
+      )
+    );
+  }
+  elseif ($private_time == 1) {
+    $form['time'] = array(
+      '#type'	=> 'textfield',
+      '#default_value' => $start_time,
+      '#attributes' => array(
+        'disabled' => 'disabled',
+        'class' => array('form-control', 'modal-pay-form-mini'),
+      )
+    );
+  }
+
+  if ($private_place == 0) {
+    $form['venue'] = array(
+      '#type'	=> 'textfield',
+      '#default_value' => $start_place,
+      '#attributes' => array(
+        'class' => array('form-control', 'modal-pay-form'),
+      )
+    );
+  }
+  elseif ($private_place == 1) {
+    $form['venue'] = array(
+      '#type'	=> 'textfield',
+      '#default_value' => $start_place,
+      '#attributes' => array(
+        'disabled' => 'disabled',
+        'class' => array('form-control', 'modal-pay-form'),
+      ),
+    );
+  }
+
+  $form['language'] = array(
+    '#type' => 'select',
+    '#title' => t('Language'),
+    '#options' => $options_languages,
+    '#default_value' => url(current_path(), array('absolute' => TRUE)),
+    '#data-content' => $data_content,
+  );
+  $form['name'] = array(
+    '#type'	=> 'textfield',
+    '#default_value' => $user->name,
+    '#required' => TRUE,
+    '#attributes' => array(
+      'class' => array('form-control', 'modal-pay-main-form'),
+    ),
+  );
+  $form['email'] = array(
+    '#type'	=> 'textfield',
+    '#default_value' => $user->mail,
+    '#required' => TRUE,
+    '#attributes' => array(
+      'class' => array('form-control', 'modal-pay-main-form'),
+    ),
+  );
+
+  $form['phone'] = array(
+    '#type'	=> 'textfield',
+    '#required' => TRUE,
+    '#attributes' => array(
+      'class' => array('form-control', 'modal-pay-main-form'),
+    ),
+  );
+
+  $form['tourist_name'] = array(
+    '#type'	=> 'textfield',
+    '#required' => TRUE,
+    '#attributes' => array(
+      'class' => array('form-control', 'modal-pay-main-form'),
+    ),
+  );
+
+  $form['tourist_email'] = array(
+    '#type'	=> 'textfield',
+    '#required' => TRUE,
+    '#attributes' => array(
+      'class' => array('form-control', 'modal-pay-main-form'),
+    ),
+  );
+
+  $form['tourist_phone'] = array(
+    '#type'	=> 'textfield',
+    '#required' => TRUE,
+    '#attributes' => array(
+      'class' => array('form-control', 'modal-pay-main-form'),
+    ),
+  );
+
+  if ($type_offer == 1) {
+    $form['companion'] = array(
+      '#type'	=> 'checkbox',
+      '#title' => t('seeking a companion'),
+      '#description' => t('seeking a companion'),
+      '#required' => FALSE,
+    );
+  }
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('next'),
+    '#attributes' => array(
+      'class' => array('button-pay', 'submit-order-next'),
+    ),
+    '#ajax' => array(
+      'callback' => 'excur_offer_order_form_submit',
+    ),
+  );
+
+  $form['#data']['node'] = $node;
+  $form['#data']['offer'] = $offer;
+
+  $form['#theme'][] = 'order_form';
+  $form['#validate'][] = 'excur_offer_order_form_validate';
+
+  return $form;
+}
+
+/**
+ * Validate callback for excur_offer_order_form() form.
+ */
+function excur_offer_order_form_validate(&$form, &$form_state) {
+  if (!$form['venue']['#value']) {
+    form_error($form['venue'], t('Specify the location of the meeting'));
+  }
+}
+
+/**
+ * Submit callback for excur_offer_order_form() form.
+ */
+function excur_offer_order_form_submit(&$form, &$form_state) {
+  global $language;
+  $values = $form_state['values'];
+  $offer = $form['#data']['offer'];
+  $nid = $offer->nid;
+
+  $lang = $form['language']['#options'][$values['language']];
+  $name = $values['name'];
+  $email = $values['email'];
+  $phone = $values['phone'];
+  $tourist_name = $values['tourist_name'];
+  $tourist_email = $values['tourist_email'];
+  $tourist_phone = $values['tourist_phone'];
+  $venue = $values['venue'];
+  $node = node_load($nid);
+  $reservation = entity_metadata_wrapper('node', $node);
+  $reservation -> language($language->language);
+  $companion = !empty($values['companion']) && $values['companion']
+    ? TRUE
+    : FALSE;
+  if ($node->type == 'service') {
+    $reservation = $reservation->field_reservation->value();
+  }
+  else {
+    $reservation = 0;
+  }
+
+  $value_update = array(
+    'language' => $lang,
+    'status' => 0,
+    'name' => $name,
+    'email' => $email,
+    'phone' => $phone,
+    'tourist_name' => $tourist_name,
+    'tourist_email' => $tourist_email,
+    'tourist_phone' => $tourist_phone,
+    'venue' => $venue,
+    'companion' => $companion,
+  );
+
+  foreach ($value_update as $label => $value) {
+    excur_offer_update($offer->id, $label, $value);
+  }
+
+
+  $html_pay = theme('pay_template', array(
+      'pay' => $nid,
+      'off_id' => $offer->id,
+    )
+  );
+
+  $commands[] = ajax_command_css('#pay-form-step-one', array('display' => 'none'));
+  $commands[] = ajax_command_css('#pay-form-step-two', array('display' => 'inline'));
+  $commands[] = ajax_command_html('#pay-form-step-two', $html_pay);
+
+  ajax_deliver(array('#type' => 'ajax', '#commands' => $commands));
+
+  drupal_exit();
+}
+
+/**
+ * Validate callback for excur_offer_offer_form() form.
+ */
+function excur_offer_offer_form_validate(&$form, &$form_state) {
+ $values = $form_state['values'];
+
+  if (user_is_anonymous()) {
+    drupal_set_message(t('You should login or register to make an order.'), 'warning');
+    drupal_goto('user', array(
+      'query' => array(
+        'destination' => 'node/' . $form_state['#data']['nid'],
+        )
+      )
+    );
+  }
+
+  $error = FALSE;
+  if (!is_array($values['tickets'])) {
+    if (!$values['tickets']) {
+      $error = TRUE;
+    }
+  }
+
+  else {
+    foreach ($values['tickets'] as $ticket) {
+      if (!is_numeric($ticket)) {
+        $error = TRUE;
+        break;
+      }
+      if ($ticket < 0 || $ticket > 99) {
+        $error = TRUE;
+        break;
+      }
+    }
+
+    if (array_sum($values['tickets']) == 0 && !$error) {
+      $error = TRUE;
+    }
+  }
+
+
+  if ($error) {
+    $commands[] = ajax_command_html('#pay-form-step-one', t('You should enter a valid count of tickets.'));
+    $commands[] = ajax_command_invoke('#excur-offer-button', 'trigger', array('click'));
+
+    ajax_deliver(array('#type' => 'ajax', '#commands' => $commands));
+
+    drupal_exit();
+  }
+
+  if (!$values['date'] || strtotime($values['date']) < REQUEST_TIME) {
+    $commands[] = ajax_command_html('#pay-form-step-one', t('You should choose a valid date.'));
+    $commands[] = ajax_command_invoke('#excur-offer-button', 'trigger', array('click'));
+
+    ajax_deliver(array('#type' => 'ajax', '#commands' => $commands));
+
+    drupal_exit();
+  }
+
+}
+
+/**
+ * Submit callback for excur_offer_offer_form() form.
+ */
+function excur_offer_offer_form_submit(&$form, &$form_state) {
+  global $user;
+  global $language;
+
+  $values = $form_state['values'];
+  $data = $form['#data'];
+  $nid = $data['nid'];
+  $node = node_load($nid);
+
+  $wrapper = entity_metadata_wrapper('node', $node);
+  $wrapper->language($language->language);
+  $start_place = $wrapper->field_start_place->value();
+  $start_time = $wrapper->field_start_time->value();
+  $duration = $data['duration'];
+  $type_offer = $data['title'];
+
+  if (!is_array($values['tickets'])) {
+    foreach ($data['tickets'] as $key => $value) {
+      $key = (string) $key . '|';
+      $key .= transliteration_get(drupal_strtolower($value['title']));
+      $key = str_replace(' ', '', $key);
+
+      if ($values['tickets'] == $key) {
+        $tickets[$value['title']] = array(
+          'count' => 1,
+          'price' => $value['price'],
+        );
+      }
+    }
+  }
+  else {
+    foreach ($data['tickets'] as $key => $value) {
+      $key = (string) $key . '|';
+      $key .= transliteration_get(drupal_strtolower($value['title']));
+      $key = str_replace(' ', '', $key);
+
+      if ($values['tickets'][$key] > 0) {
+        $tickets[$value['title']] = array(
+          'count' => $values['tickets'][$key],
+          'price' => $value['price'],
+        );
+      }
+    }
+  }
+  $tickets = serialize($tickets);
+
+  $lang = 0;
+  $oid = rand(1000, 9999) . REQUEST_TIME;
+  $id = excur_offer_save($oid, $user->uid, $data['nid'], $tickets, excur_offer_user_currency(), strtotime($values['date']), 0, $lang, $type_offer, $duration, 0, 0, 0, 0, 0, 0, $start_place, $start_time, 0);
+
+  $html_form  = theme('order_template', array('order' => $id, 'node' => $node));
+
+  $commands[] = ajax_command_invoke('#excur-offer-button', 'trigger', array('click'));
+  $commands[] = ajax_command_html('#pay-form-step-two', '');
+  $commands[] = ajax_command_css('#pay-form-step-one', array('display' => 'inline'));
+  $commands[] = ajax_command_html('#pay-form-step-one', $html_form);
+
+  ajax_deliver(array('#type' => 'ajax', '#commands' => $commands));
+
+  drupal_exit();
+}
+
+/**
+ * Send html mail.
+ */
+function excur_offer_send_mail($email, $message, $subject = NULL, $module_key = NULL) {
+  $subject = $subject
+    ? $subject
+    : t('Уведомление от сайта "!site"', array('!site' => variable_get('site_name')));
+
+  $module = 'excur_offer';
+  $module_key = $module_key ? $module_key : 'offer_mail';
+  $from = variable_get('site_mail');
+  $message = array(
+    'id' => $module . '_' . $module_key,
+    'to' => $email,
+    'subject' => $subject,
+    'body' => array($message),
+    'from' => $from,
+    'headers' => array(
+      'MIME-Version' => '1.0',
+      'Content-Type' => 'text/html; charset=UTF-8; format=flowed',
+      'Content-Transfer-Encoding' => '8Bit',
+      'X-Mailer' => 'Drupal',
+      'From' => $from,
+      'Sender' => $from,
+      'Return-Path' => $from,
+    ),
+  );
+  $system = drupal_mail_system($module, $module_key);
+  $message = $system->format($message);
+
+  return $system->mail($message);
+}
+
+/**
+ * Load offer.
+ *
+ * @param int $oid.
+ * @return object.
+ */
+function excur_offer_load($id) {
+  return db_select('excur_offer', 'eo')
+    ->fields('eo')
+    ->condition('id', $id)
+    ->execute()
+    ->fetchObject();
+}
+
+/**
+ * Save offer.
+ */
+function excur_offer_save($oid, $uid, $nid, $ticket, $currency, $date, $status, $language, $offer, $duration, $name, $email, $phone, $tourist_name, $tourist_email, $tourist_phone,$venue, $start_time, $companion) {
+  $record = array(
+    'oid' => $oid,
+    'uid' => $uid,
+    'nid' => $nid,
+    'date' => $date,
+    'ticket' => $ticket,
+    'currency' => $currency,
+    'created' => REQUEST_TIME,
+    'status' => $status,
+    'language' => $language,
+    'offer' => $offer,
+    'duration' => $duration,
+    'name' => $name,
+    'email' => $email,
+    'phone' => $phone,
+    'tourist_name' => $tourist_name,
+    'tourist_email' => $tourist_email,
+    'tourist_phone' => $tourist_phone,
+    'venue' => $venue,
+    'start_time' => $start_time,
+    'companion' => $companion,
+  );
+
+  $id = db_insert('excur_offer')
+    ->fields($record)
+    ->execute();
+  return $id;
+}
+
+/**
+ * Update offer by oid.
+ *
+ * @param int $id.
+ * @param string $label.
+ * @param mixed $value.
+ */
+function excur_offer_update($id, $label, $value) {
+  db_update('excur_offer')
+    ->fields(array($label => $value))
+    ->condition('id', $id)
+    ->execute();
+}
+
+/**
+ * Get service duration of offer by price.
+ *
+ * @param float $price.
+ * @param int $nid.
+ * @return string.
+ */
+function excur_offer_duration_by_price($price, $nid) {
+  global $language;
+
+  $query = db_select('field_data_field_offer_duration', 'duration');
+  $query->fields('duration', array('field_offer_duration_value'));
+  $query->join('field_data_field_offer', 'offer', 'offer.field_offer_value = duration.entity_id');
+  $query->join('field_data_field_offer_ticket', 'ticket', 'offer.field_offer_value = ticket.entity_id');
+  $query->join('field_data_field_offer_ticket_price', 'ticket_price', 'ticket.field_offer_ticket_value = ticket_price.entity_id');
+  $query->condition('offer.entity_id', $nid);
+  $query->condition('ticket_price.field_offer_ticket_price_value', $price);
+  $query->condition('duration.language', $language->language);
+
+  return $query->execute()->fetchField();
+}
+
+/**
+ * Check if user ordered service of current guide.
+ */
+function excur_offer_is_user_ordered($guide_uid, $uid = NULL) {
+  global $user;
+  $uid = $uid ? $uid : $user->uid;
+
+  $query = db_select('excur_offer', 'eo');
+  $query->join('field_data_field_guide', 'fdfg', 'fdfg.entity_id = eo.nid');
+  $query->fields('eo', array('uid'));
+  $query->condition('eo.uid', $uid);
+  $query->condition('fdfg.field_guide_target_id', $guide_uid);
+  $query->range(0, 1);
+
+  return (bool) $query->execute()->fetchField();
+}
+
+/**
+ * Check if user ordered service of current offer.
+ */
+function excur_offer_is_user_ordered_offer($nid, $uid = NULL) {
+  global $user;
+  $uid = $uid ? $uid : $user->uid;
+
+  $query = db_select('excur_offer', 'eo');
+  $query->fields('eo', array('oid'));
+  $query->condition('eo.uid', $uid);
+  $query->condition('eo.nid', $nid);
+  $query->range(0, 1);
+
+  return (bool) $query->execute()->fetchField();
+}
+
+/**
+ * Generate link to pdf version of offer.
+ *
+ * @param string $title
+ * @param object $offer
+ * @return string
+ */
+function excur_offer_pdf_link($title, $offer) {
+  $hash = md5(serialize($offer));
+
+  return l(t($title), "excur/offer/$offer->id", array(
+    'query' => array(
+      'hash' => $hash,
+      ),
+    )
+  );
+
+}
+
+/**
+ * Page callback for 'excur/special-offer/%node' path.
+ */
+function excur_offer_special_offer($node) {
+  global $user;
+  global $language;
+
+  $wrapper = entity_metadata_wrapper('node', $node);
+  $wrapper->language($language->language);
+  $start_place = $wrapper->field_start_place->value();
+  $start_time = $wrapper->field_start_time->value();
+  $duration = $wrapper->field_duration->value();
+  $price = $wrapper->field_price->value();
+  $date = strtotime($wrapper->field_start_date->value());
+  $type_offer = t('Special offer');
+
+  $oid = rand(1000, 9999) . REQUEST_TIME;
+  $id = excur_offer_save($oid, $user->uid, $node->nid, $price, excur_offer_user_currency(), $date, 0, 0, $type_offer, $duration, 0, 0, 0, 0, 0, 0, $start_place, $start_time);
+  drupal_goto('excur/offer/order/' . $node->nid, array('query' => array('id' => $id)));
+}
+
+/**
+ * Universalize and compute total sum.
+ *
+ * @param string $data
+ * @return int
+ */
+function excur_offer_total_sum($data) {
+  $data = unserialize($data);
+
+  $total = 0;
+  foreach ($data as $ticket) {
+    $total += $ticket['price'] * $ticket['count'];
+  }
+
+  return $total;
+}
+
+/**
+ * Information on business days Offers.
+ */
+function excur_offer_info_working_days($offer) {
+  $days = '';
+  if ($offer->field_offer_date[LANGUAGE_NONE][0]['value'] == 0 || $offer->field_offer_date[LANGUAGE_NONE][0]['value'] == 3) {
+    $days .= t('everyday');
+  }
+  elseif($offer->field_offer_date[LANGUAGE_NONE][0]['value'] == 1) {
+    $days = '';
+    if (!empty($offer->field_offer_date_week)) {
+      foreach ($offer->field_offer_date_week[LANGUAGE_NONE] as $day) {
+        switch ($day['value']) {
+          case 1:
+            $days .= t('Monday') . ', ';
+            break;
+          case 2:
+            $days .= t('Tuesday') . ', ';
+            break;
+          case 3:
+            $days .= t('Wednesday') . ', ';
+            break;
+          case 4:
+            $days .= t('Thursday') . ', ';
+            break;
+          case 5:
+            $days .= t('Friday') . ', ';
+            break;
+          case 6:
+            $days .= t('Saturday') . ', ';
+            break;
+          case 7:
+            $days .= t('Sunday') . ', ';
+            break;
+        }
+      }
+    }
+    $days = substr($days, 0, strlen($days) - 2);
+  }
+  $times = '';
+  foreach ($offer->field_offer_time_work[LANGUAGE_NONE] as $time) {
+    $times .= $time['value'] . ', ';
+  }
+  $times = substr($times, 0, strlen($times) - 2);
+
+  return $days . ' : ' . $times;
+}

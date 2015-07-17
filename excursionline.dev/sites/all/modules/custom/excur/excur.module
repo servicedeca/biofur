@@ -1,0 +1,775 @@
+<?php
+/**
+ * @file
+ */
+
+define('EXCUR_FRONT_THEME_PATH', drupal_get_path('theme', 'exc_theme'));
+define('EXCUR_USER_ROLE_GUIDE_ID', 4);
+define('EXCUR_USER_ROLE_PARTNER_ID', 5);
+define('EXCUR_USER_ROLE_GUIDE_NAME', 'Гид');
+define('EXCUR_USER_ROLE_PARTNER_NAME', 'Партнер');
+
+/**
+ * Implements hook
+ */
+function excur_menu() {
+  $items['admin/config/excur'] = array(
+    'title' => 'Site settings',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('excur_settings_form'),
+    'access arguments' => array('administer site configuration'),
+  );
+
+  $items['user/%user/add_service'] = array(
+    'title' => 'Add service',
+    'page callback' => 'excur_add_service',
+    'page arguments' => array(1),
+    'access callback' => 'excur_user_page_access',
+    'access arguments' => array(1),
+  );
+
+  $items['excur/companion/message/%node/%user'] = array(
+    'title' => 'Companion message',
+    'page callback' => 'excur_offer_companion_message',
+    'page arguments' => array(3, 4),
+    'access arguments' => array('access content'),
+  );
+
+  $items['excur/comment_rating'] = array(
+    'title' => 'Comment and rating',
+    'page callback' => 'excur_comment_rating',
+    'access callback' => TRUE,
+    'delivery callback' => 'excur_ajax_delivery_callback',
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_menu_alter().
+ */
+function excur_menu_alter(&$items) {
+
+  $items['user/%user/edit']['title'] = 'Profile';
+  $items['user/%user/view']['title'] = 'My offers';
+
+  $items['user/%user/messages'] = array(
+    'title' => 'Private messages',
+    'page callback' => 'theme',
+    'page arguments' => array('excur_user_messages'),
+    'access callback' => 'excur_user_page_access',
+    'access arguments' => array(1),
+  );
+
+}
+
+/**
+ * Implements hook_init().
+ */
+function excur_init() {
+  // Include necessary files for private messages.
+  if (preg_match('/user\/[0-9]*\/messages/', current_path()) || (isset($_POST['form_id']) && $_POST['form_id'] == 'privatemsg_list')) {
+    module_load_include('inc', 'privatemsg', 'privatemsg.pages');
+  }
+  elseif (preg_match('/user\/[0-9]*\/edit/', current_path()) || (isset($_POST['form_id']) && $_POST['form_id'] == 'user_profile_form')) {
+    module_load_include('inc', 'user', 'user.pages');
+  }
+}
+
+/**
+ * Implements hook_entity_info_alter().
+ */
+function excur_entity_info_alter(&$entity_info) {
+  $entity_info['node']['view modes']['other'] = array(
+    'label' => t('Other'),
+    'custom settings' => FALSE,
+  );
+
+  $entity_info['node']['view modes']['country_teaser'] = array(
+    'label' => t('Country teaser'),
+    'custom settings' => FALSE,
+  );
+}
+
+/**
+ * Implements hook_node_insert().
+ */
+function excur_node_insert($node) {
+  $lang = $node->translations->original;
+
+  if ($node->type == 'service') {
+    if (empty($node->title)) {
+      $node->title_field[$lang] = $node->title_field[LANGUAGE_NONE];
+      $node->title = $node->title_field[$lang][0]['value'];
+    }
+    if (empty($node->field_duration[$lang])) {
+      $node->field_duration[$lang] = $node->field_duration[LANGUAGE_NONE];
+    }
+    if (empty($node->body[$lang])) {
+      $node->body[$lang] = $node->body[LANGUAGE_NONE];
+    }
+
+    $offer = field_collection_item_load($node->field_offer[LANGUAGE_NONE][0]['value']);
+    foreach ($offer->field_offer_ticket[LANGUAGE_NONE] as $ticket) {
+      $ticket = field_collection_item_load($ticket['value']);
+
+      if (empty($ticket->field_offer_ticket_title[$lang])) {
+        $ticket->field_offer_ticket_title[$lang] = $ticket->field_offer_ticket_title[LANGUAGE_NONE];
+      }
+      $ticket->save(TRUE);
+    }
+  }
+}
+
+/**
+ * Implement hook_theme().
+ */
+function excur_theme() {
+  $base = array(
+    'file' => 'theme.inc',
+    'path' => drupal_get_path('module', 'excur') . '/theme',
+  );
+
+  $items['excur_user_messages'] = array(
+    'template' => 'excur-user-messages',
+    'variables' => array(
+      'account' => NULL,
+    ),
+  );
+  $items['excur_user_edit'] = array(
+    'template' => 'excur-user-edit',
+    'variables' => array(
+      'account' => NULL,
+    ),
+  );
+  $items['excur_user_menu'] = array(
+    'template' => 'excur-user-menu',
+    'variables' => array(
+      'account' => NULL,
+    ),
+  );
+  $items['excur_profile_form'] = $base + array(
+    'template' => 'excur-profile-form',
+    'render element' => 'form',
+  );
+  $items['excur_user_login_form'] = $base + array(
+    'template' => 'excur-user-login-form',
+    'render element' => 'form',
+  );
+  $items['excur_user_register_form'] = $base + array(
+    'template' => 'excur-user-register-form',
+    'render element' => 'form',
+  );
+  $items['excur_service_node'] = $base + array(
+      'template' => 'excur-service-node-form',
+      'render element' => 'form',
+    );
+  $items['excur_user_bookings'] = array(
+    'template' => 'excur-user-bookings',
+  );
+  $items['excur_user_order'] = array(
+    'template' => 'excur-user-order',
+  );
+  $items['excur_user_offers'] = array(
+    'template' => 'excur-user-offers',
+  );
+
+  $items['excur_travel_planner'] = $base + array(
+    'template' => 'excur-travel-planner',
+  );
+
+  $items['excur_language_switcher'] = $base + array(
+    'template' => 'excur-language-switcher',
+  );
+
+  $items['comment_form'] = array(
+    'render element' => 'form',
+    'template' => 'comment-form',
+  );
+
+  return $items;
+}
+
+/**
+ * Page callback user/%user/bookings
+ */
+function excur_user_bookings($account) {
+  return theme('excur_user_bookings', array('account' => $account));
+}
+
+/**
+ * Page callback user/%user/offer
+ */
+function excur_user_offers($account) {
+  return theme('excur_user_offers', array('account' => $account));
+}
+
+/**
+ * Check if the order number coincided
+ */
+function excur_number_ordered($oid, $nid) {
+  return db_select('excur_offer', 'eo')
+    ->fields('eo', array('id'))
+    ->condition('eo.oid', $oid)
+    ->condition('eo.nid', $nid)
+    ->range(0, 1)
+    ->execute()
+    ->fetchField();
+}
+
+/*
+ * Page callback comment_rating
+ */
+function excur_comment_rating() {
+  $output = FALSE;
+
+  if (!empty($_POST['number']) && !empty($_POST['node'])
+    && is_numeric($_POST['number']) && is_numeric($_POST['node'])
+    && $node = node_load($_POST['node'])) {
+
+    if (excur_number_ordered($_POST['number'], $node->nid)) {
+      $comments = comment_node_page_additions($node);
+      $output =  render($comments);
+    }
+  }
+
+  return $output;
+}
+
+/**
+ * Check if companion in service.
+ */
+function excur_companion_in_service($nid) {
+  return db_select('excur_offer', 'eo')
+    ->fields('eo', array('id'))
+    ->condition('eo.nid', $nid)
+    ->condition('eo.companion', 1)
+    ->condition('eo.status', 'confirmed')
+    ->condition('eo.date', REQUEST_TIME)
+    ->range(0, 1)
+    ->execute()
+    ->fetchField();
+}
+
+/**
+ * Page callback add_service
+ */
+function excur_add_service($account) {
+  $user = user_load($account->uid);
+  if (empty($user->field_phone)) {
+    drupal_set_message(t('To add excursions you must fill your phone number.'), 'error');
+    drupal_goto("user/$account->uid/edit", array(
+      'query' => array(
+        'error' => 'phone',
+      )
+    ));
+  }
+  else{
+    drupal_goto('node/add/service', array('query' => array('guide' => $account->uid,)));
+  }
+}
+
+/**
+ * Page callback user/%user/order
+ */
+function excur_user_order($account) {
+  return theme('excur_user_order', array('account' => $account));
+}
+
+/**
+ * Access callback for user/%user/massages.
+ */
+function excur_user_page_access($account) {
+  global $user;
+
+  if ($user->uid == 1 || $account->uid == $user->uid) {
+    return TRUE;
+  }
+
+  return FALSE;
+}
+
+/**
+ * Page callback for user/%user/edit.
+ */
+function excur_user_edit($account) {
+  global $user;
+
+  if ($user->uid == 1) {
+    return drupal_get_form('user_profile_form', $account);
+  }
+  else {
+    return theme('excur_user_edit', array('account' => $account));
+  }
+}
+
+/**
+ * Implements hook_ctools_plugin_directory().
+ */
+function excur_ctools_plugin_directory($owner, $plugin_type) {
+  if ($owner == 'panels') {
+    return "plugins/$plugin_type";
+  }
+
+  if ($owner == 'ctools' && $plugin_type == 'content_types') {
+    return "plugins/content_types";
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function excur_form_service_node_form_alter(&$form, &$form_state) {
+  if (!empty($_GET['guide']) && is_numeric($_GET['guide']) && $guide = user_load($_GET['guide'])) {
+    $form['field_guide'][LANGUAGE_NONE][0]['target_id']['#value'] = $guide->field_name[LANGUAGE_NONE][0]['safe_value'] . " ($guide->uid)";
+    $form['field_guide']['#attributes']['class'][] = 'element-hidden';
+  }
+
+  foreach ($form['field_offer'][LANGUAGE_NONE] as &$item) {
+    if (!is_array($item) || empty($item['field_offer_date_calendar'])) {
+      continue;
+    }
+
+    $item['field_offer_date_calendar'][LANGUAGE_NONE][0]['value']['#attributes']['class'][] = 'awesome-calendar';
+  }
+
+  $form_state['buttons'][0]['#attributes']['class'][] = 'btn';
+  $form['actions']['submit']['#attributes']['class'][] = 'btn';
+  $form['actions']['delete']['#attributes']['class'][] = 'btn';
+  $form['#theme'][] = 'excur_service_node';
+  unset($form['actions']['preview_changes']);
+  unset($form['form']['language']);
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function excur_form_user_register_form_alter(&$form, &$form_state) {
+  $form['#theme'][] = 'excur_user_register_form';
+
+  $langcode = entity_language('user', $form['#user']);
+  field_attach_form('user', $form['#user'], $form, $form_state, $langcode);
+  foreach (field_info_instances('user', 'user') as $field_name => $instance) {
+    if (!empty($instance['settings']['user_register_form'])) {
+      $form[$field_name]['#access'] = TRUE;
+    }
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function excur_form_user_profile_form_alter(&$form, &$form_state) {
+  global $user;
+
+  if (!$user->uid == 1 || empty($user->roles[3])) {
+    $form['field_certified']['#access'] = FALSE;
+  }
+
+  if (!isset($user->roles[EXCUR_USER_ROLE_GUIDE_ID])) {
+    $form['guide'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Become a guide'),
+      '#default_value' => isset($user->roles[EXCUR_USER_ROLE_GUIDE_ID]) ? TRUE : FALSE,
+    );
+  }
+  else {
+    $form['guide_company'] = array(
+      '#type' => 'radios',
+      '#options' => array(
+        1 => t('Guide'),
+        2 => t('Company'),
+      ),
+      '#default_value' => empty($user->data['guide_company']) ? 1 : $user->data['guide_company'],
+    );
+  }
+
+  if (!isset($user->roles[EXCUR_USER_ROLE_PARTNER_ID])) {
+    $form['partner'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Become a partner'),
+      '#default_value' => isset($user->roles[EXCUR_USER_ROLE_PARTNER_ID]) ? TRUE : FALSE,
+    );
+  }
+
+  if (!empty($_GET['error'])) {
+    if ($_GET['error'] == 'phone') {
+      $form['field_phone'][LANGUAGE_NONE][0]['value']['#attributes']['class'][] = 'error';
+    }
+  }
+
+  $form['actions']['submit']['#attributes']['class'][] = 'btn';
+  $form['actions']['cancel']['#attributes']['class'][] = 'btn';
+  $form['#submit'][] = 'excur_form_user_profile_form_submit';
+  $form['#validate'][] = 'excur_form_user_profile_form_validate';
+  $form['#theme'][] = 'excur_profile_form';
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function excur_form_user_login_alter(&$form, &$form_state) {
+  $form['actions']['submit']['#attributes']['class'][] = 'btn';
+  $form['#theme'][] = 'excur_user_login_form';
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function excur_form_user_pass_alter(&$form, &$form_state) {
+  $form['actions']['submit']['#attributes']['class'][] = 'btn';
+}
+
+/**
+ * Custom submit for user_profile_form() form.
+ */
+function excur_form_user_profile_form_validate(&$form, &$form_state) {
+  $values = $form_state['values'];
+
+  if (empty($values['field_company_name'][LANGUAGE_NONE][0]['value'])) {
+    //form_error($form['field_company_name'], t('You must enter the company name.'));
+  }
+}
+
+/**
+ * Custom submit for user_profile_form() form.
+ */
+function excur_form_user_profile_form_submit(&$form, &$form_state) {
+  global $user;
+
+  $values = $form_state['values'];
+  if (!empty($values['guide']) && $values['guide']) {
+    $form['#user']->roles[EXCUR_USER_ROLE_GUIDE_ID] = EXCUR_USER_ROLE_GUIDE_NAME;
+    user_save($form['#user']);
+  }
+  if (!empty($values['partner']) && $values['partner']) {
+    $form['#user']->roles[EXCUR_USER_ROLE_PARTNER_ID] = EXCUR_USER_ROLE_PARTNER_NAME;
+    user_save($form['#user']);
+  }
+
+  if (!empty($values['guide_company'])) {
+    $user->data['guide_company'] = $values['guide_company'];
+    user_save($user);
+  }
+}
+
+/**
+ * Settings form for excur site.
+ */
+function excur_settings_form() {
+  $form['excur_contact_phone'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Contact phone'),
+    '#default_value' => variable_get('excur_contact_phone'),
+  );
+
+  return system_settings_form($form);
+}
+
+/**
+ * Get text blocks for main page.
+ *
+ * @return array.
+ */
+function excur_main_text_blocks() {
+  global $language;
+
+  $query = db_select('node', 'n');
+  $query->fields('n', array('nid'));
+  $query->join('entity_translation', 'et', 'et.entity_id = n.nid');
+  $query->condition('n.type ', 'text_block');
+  $query->condition('et.entity_type', 'node');
+  $query->condition('et.language', $language->language);
+  $nids = $query->execute()->fetchCol();
+
+  if ($nids) {
+    return node_load_multiple($nids);
+  }
+
+  return array();
+}
+
+/**
+ * Get count of service in city.
+ *
+ * @param int $tid.
+ * @return int.
+ */
+function excur_count_service_by_city($tid) {
+  $query = db_select('field_data_field_city', 'fdfc');
+  $query->fields('fdfc', array('entity_id'));
+  $query->condition('fdfc.field_city_target_id', $tid);
+  $query->condition('fdfc.bundle', 'service');
+  $count = $query->execute()->rowCount();
+
+  return $count ? $count : 0;
+}
+
+/**
+ * Build the breadcrumb by current page.
+ *
+ * @return array.
+ */
+function excur_get_breadcrumb() {
+  if ($node = menu_get_object()) {
+    if ($node->type == 'service') {
+      $city = taxonomy_term_load($node->field_city[LANGUAGE_NONE][0]['target_id']);
+      $country = taxonomy_term_load($city->field_country[LANGUAGE_NONE][0]['target_id']);
+      $continent = taxonomy_term_load($country->field_continent[LANGUAGE_NONE][0]['target_id']);
+
+      $breadcrumb[] = l($continent->name, "taxonomy/term/$continent->tid");
+      $breadcrumb[] = l($country->name, "taxonomy/term/$country->tid");
+      $breadcrumb[] = l($city->name, "taxonomy/term/$city->tid");
+      $breadcrumb[] = $node->title;
+    }
+    else {
+      $breadcrumb[] = $node->title;
+    }
+  }
+  elseif ($term = menu_get_object('taxonomy_term', 2)) {
+    if ($term->vocabulary_machine_name == 'continent') {
+      $breadcrumb[] = $term->name;
+    }
+    elseif ($term->vocabulary_machine_name == 'country') {
+      $continent = taxonomy_term_load($term->field_continent[LANGUAGE_NONE][0]['target_id']);
+
+      $breadcrumb[] = l($continent->name, "taxonomy/term/$continent->tid");
+      $breadcrumb[] = $term->name;
+    }
+    elseif ($term->vocabulary_machine_name == 'city') {
+      $country = taxonomy_term_load($term->field_country[LANGUAGE_NONE][0]['target_id']);
+      $continent = taxonomy_term_load($country->field_continent[LANGUAGE_NONE][0]['target_id']);
+
+      $breadcrumb[] = l($continent->name, "taxonomy/term/$continent->tid");
+      $breadcrumb[] = l($country->name, "taxonomy/term/$country->tid");
+      $breadcrumb[] = $term->name;
+    }
+  }
+
+  if (isset($breadcrumb)) {
+    array_unshift($breadcrumb, l(t('Home'), '<front>'));
+
+    return $breadcrumb;
+  }
+
+  return array();
+}
+
+/**
+ * Get most popular cities by country.
+ *
+ * @param int $tid
+ * @param int $limit
+ * @return array
+ */
+function excur_popular_cities($tid, $limit = 4) {
+  global $language;
+
+  $query = db_select('field_data_field_city', 'city');
+  $query->fields('city', array('field_city_target_id'));
+  $query->join('field_data_field_country', 'country', 'city.field_city_target_id = country.entity_id');
+  $query->join('entity_translation', 'et', 'city.field_city_target_id = et.entity_id');
+  $query->condition('city.bundle', 'service');
+  $query->condition('country.bundle', 'city');
+  $query->condition('et.entity_type', 'taxonomy_term');
+  $query->condition('et.language', $language->language);
+  $query->condition('country.field_country_target_id', $tid);
+  $query->groupBy('city.field_city_target_id');
+  $query->range(0, $limit);
+
+  return $query->execute()->fetchCol();
+}
+
+/**
+ * Get count of guides by city.
+ *
+ * @param int $tid.
+ * @return array.
+ */
+function excur_count_guide_by_city($tid) {
+  $query = db_select('field_data_field_city', 'city');
+  $query->fields('city', array('entity_id'));
+  $query->condition('city.field_city_target_id', $tid);
+  $query->condition('city.bundle', 'user');
+  $count = $query->execute()->rowCount();
+
+  return $count ? $count : 0;
+}
+
+/**
+ * Get most popular giudes by country.
+ *
+ * @param int $tid
+ * @param int $limit
+ * @return array
+ */
+function excur_popular_giudes_in_country($tid, $limit = 5) {
+  $query = db_select('users', 'u');
+  $query->fields('u', array('uid'));
+  $query->join('field_data_field_city', 'city', 'u.uid = city.entity_id');
+  $query->join('field_data_field_country', 'country', 'city.field_city_target_id = country.entity_id');
+  $query->join('votingapi_cache', 'vc', 'vc.entity_id = u.uid AND vc.entity_type = \'user\' AND vc.function = \'average\'');
+  $query->condition('u.status', 1);
+  $query->condition('city.bundle', 'user');
+  $query->condition('country.bundle', 'city');
+  $query->condition('country.field_country_target_id', $tid);
+  $query->orderBy('vc.value', 'DESC');
+  $query->range(0, $limit);
+
+  return $query->execute()->fetchCol();
+}
+
+/**
+ * Get most popular giudes by city.
+ *
+ * @param int $tid
+ * @param int $limit
+ * @return array
+ */
+function excur_popular_giudes_in_city($tid, $limit = 5) {
+  $query = db_select('users', 'u');
+  $query->fields('u', array('uid'));
+  $query->join('field_data_field_city', 'city', 'u.uid = city.entity_id');
+  $query->join('votingapi_cache', 'vc', 'vc.entity_id = u.uid AND vc.entity_type = \'user\' AND vc.function = \'average\'');
+  $query->condition('u.status', 1);
+  $query->condition('city.bundle', 'user');
+  $query->condition('city.field_city_target_id', $tid);
+  $query->orderBy('vc.value', 'DESC');
+  $query->range(0, $limit);
+
+  return $query->execute()->fetchCol();
+}
+
+/**
+ * Draw user menu.
+ */
+function excur_user_menu($account) {
+  return theme('excur_user_menu', array('account' => $account));
+}
+
+/**
+ * Render guide photo.
+ *
+ * @param object $account
+ * @param string $style
+ * @param array $attributes
+ * @return string.
+ */
+function excur_guide_logo($account, $style, $attributes = array()) {
+  if (!empty($account->field_image[LANGUAGE_NONE])) {
+    $path = $account->field_image[LANGUAGE_NONE][0]['uri'];
+    $theming = 'image_style';
+  }
+  else {
+    $path = EXCUR_FRONT_THEME_PATH . '/images/user-default.png';
+    $theming = 'remote_image_style';
+  }
+  $title_alt = $account->field_name[LANGUAGE_NONE][0]['safe_value'];
+
+  return theme('image', array(
+   // 'style_name' => $style,
+    'path' => $path,
+    'alt' => $title_alt,
+    'title' => $title_alt,
+    'attributes' => $attributes,
+    )
+  );
+}
+
+/**
+ * Page callback for 'excur/companion/message/%node/%user' path.
+ */
+function excur_offer_companion_message($node, $account) {
+  global $user;
+
+  $results = db_select('pm_index', 'pm')
+    ->fields('pm', array('thread_id'))
+    ->condition('pm.recipient', $user->uid)
+    ->execute()
+    ->fetchCol();
+  foreach ($results as $result) {
+    $thread_id = db_select('pm_index', 'pm')
+      ->fields('pm', array('thread_id'))
+      ->condition('pm.recipient', $account->uid)
+      ->condition('pm.thread_id', $result)
+      ->execute()
+      ->fetchField();
+
+    if ($thread_id) {
+      drupal_goto('messages/view/' . $thread_id);
+    }
+  }
+
+  $message = new StdClass();
+  // @TODO: Chevi, dodelaesh?
+  $message->body = t('Special offer to you. You can pay for it at !this_page.', array('!this_page' => 'dfdf'));
+  $message->subject = t('Special offer to you. You can pay for it at !this_page.');
+  $recipient = new StdClass();
+  $recipient->type = 'user';
+  $recipient->recipient = $account->uid;
+  $message->recipients = array($recipient);
+  $message->author = $user;
+  $message->timestamp = REQUEST_TIME;
+  $message->format = 'filtered_html';
+  $message->has_tokens = FALSE;
+  _privatemsg_send($message);
+
+  drupal_goto('messages/view/' . $message->thread_id);
+}
+
+/**
+ * Form builder for comment and rating form.
+ */
+function excur_comment_rating_form($form) {
+  $nid = menu_get_object()->nid;
+
+  $form['number'] = array(
+    '#type'	=> 'textfield',
+    '#title' => t('Ticket number'),
+    '#attributes' => array(
+      'name' => array('number'),
+    ),
+  );
+  $form['node'] = array(
+    '#type'	=> 'hidden',
+    '#title' => t('node'),
+    '#value' => $nid,
+    '#attributes' => array(
+      'id' => array('number-node'),
+      'name' => array('node'),
+    ),
+  );
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Confirm'),
+    '#attributes' => array(
+      'class' => array('btn'),
+    ),
+  );
+
+  return $form;
+}
+
+/**
+ * Check if current guide is company.
+ *
+ * @param object $guide
+ * @return bool
+ */
+function  excur_guide_is_company($guide) {
+  return !empty($guide->data['guide_company']) && $guide->data['guide_company'] == 2;
+}
+
+/**
+ * Ajax delivery callback.
+ */
+function excur_ajax_delivery_callback($data) {
+  $data = is_string($data) ? $data : render($data);
+
+  $output = drupal_get_css();
+  $output .= drupal_get_js();
+  $output .= $data;
+
+  print $output;
+}
