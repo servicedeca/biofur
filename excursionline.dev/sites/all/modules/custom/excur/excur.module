@@ -164,9 +164,7 @@ function excur_theme() {
       'template' => 'excur-service-node-form',
       'render element' => 'form',
     );
-  $items['excur_user_bookings'] = array(
-    'template' => 'excur-user-bookings',
-  );
+
   $items['excur_user_order'] = array(
     'template' => 'excur-user-order',
   );

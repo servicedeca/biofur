@@ -1299,19 +1299,6 @@ function exc_theme_preprocess_excur_user_edit(&$vars) {
 }
 
 /**
- * Process variables for excur-user-bookings.tpl.php
- */
-function exc_theme_preprocess_excur_user_bookings(&$vars) {
-  $account = $vars['account'];
-
-  $vars['user_menu'] = excur_user_menu($account);
-  $vars['confirmed'] = views_embed_view('offers', 'confirmed_user_offers');
-  $vars['archive'] = views_embed_view('offers', 'archive_user_offers');
-  $vars['rejected'] = views_embed_view('offers', 'rejected_user_offers');
-  $vars['not_confirmed'] = views_embed_view('offers', 'user_offers');
-}
-
-/**
  * Process variables for excur-user-order.tpl.php
  */
 function exc_theme_preprocess_excur_user_order(&$vars) {

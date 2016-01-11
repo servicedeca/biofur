@@ -87,7 +87,7 @@ function excur_preprocess_excur_language_switcher(&$vars) {
   ));
 
   foreach (language_list() as $lang) {
-    if ($lang->enabled) {
+    if ($lang->enabled && $lang->language == 'ru') {
       $url = url(current_path(), array('language' => $lang, 'absolute' => TRUE));
 
       $vars['languages'][$lang->prefix]['class'] = $lang->prefix == $language->prefix
@@ -104,6 +104,7 @@ function excur_preprocess_excur_language_switcher(&$vars) {
       ));
     }
   }
+
 }
 
 /**

@@ -2,7 +2,7 @@
   <?php print drupal_render_children($form); ?>
 <?php else: ?>
   <div class="col-xs-9 right-line-office">
-  <h1 class="office-name"><?php print $account->field_name['und'][0]['value']; ?></h1>
+  <h1 class="office-name"><?php print $account->field_name[LANGUAGE_NONE][0]['value']; ?></h1>
   <h2 class="office-place">Новосибирск, Россия</h2>
   <h3 class="office-title"><?php print t('My profile'); ?></h3>
   <div class="col-xs-6 profile-part">
