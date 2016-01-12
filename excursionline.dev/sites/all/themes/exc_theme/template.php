@@ -401,7 +401,7 @@ function exc_theme_preprocess_node__service_country_teaser(&$vars) {
       'class' => array('pop-excur-image'),
     )
   ));
-  $vars['currency'] = excur_currency_get_icon($currency);
+  $vars['currency'] = $currency;
   $vars['title'] = check_plain($node->title);
 
   foreach ($wrapper->field_languages->value() as $lang) {

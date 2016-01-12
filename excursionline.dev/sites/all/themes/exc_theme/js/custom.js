@@ -82,7 +82,7 @@
         e.preventDefault();
 
         var tid = $(this).data('tid');
-        $('#views-exposed-form-content-city-service #edit-field-category-tid').val(tid);
+        $('#views-exposed-form-content-city-service #edit-field-category-tid option[value='+tid+']').attr('selected', 'selected');
         $('#views-exposed-form-content-city-service #edit-submit-content').click();
       });
     }
